@@ -1,7 +1,7 @@
 /*
  * ========================= main.cpp ==========================
  *                          -- tpr --
- *                                        CREATE -- 2018.11.21
+ *                                        CREATE -- 2020.10.01
  *                                        MODIFY -- 
  * ----------------------------------------------------------
  */
@@ -9,29 +9,57 @@
 
 //-------------------- Main --------------------//
 #include "SysConfig.h" // 此文件由 cmake 自己生成，并不在 src/ 目录中
+#include "prepare.h"
+
+#include "write_2_png.h"
+
+#include "global.h"
+
+
+//tmp
+#include "tprGeneral.h"
 
 
 int main( int argc, char* argv[] ){
+    debug::log( "\n---------------------- BEGIN ----------------------\n\n" );
+    //==========================================//
+    //                 prepare
+    //------------------------------------------//
+    prepare( argv[0] );
 
     
-    //===== debug::log 示例：
-    debug::log(
-        "tpr ray tracing"
-    );
+    //===== test
+    debug::log( "\ntpr ray tracing" );
+
+
+    //==========================================//
+    //               tmp works
+    //------------------------------------------//
+
+    std::string pngPath = tprGeneral::path_combine( path_output, "akokoa.png" );
+
+    int W = 500;
+    int H = 500;
+
+    std::vector<RGBA> pngData ( W*H, RGBA{ 180, 210, 200, 255 } );
 
 
 
-    //======= 检查当前所处的 操作系统：
-    #if defined TPR_OS_MACOSX_
-        debug::log( "\n___OS_MACOSX___\n\n" );
-    #elif defined TPR_OS_LINUX_
-        debug::log( "\n___OS_LINUX___\n\n" );
-    #elif defined TPR_OS_WIN32_
-        debug::log( "\n___OS_WIN32___\n\n" );
-    #endif 
 
 
 
+
+    write_2_png(pngPath,
+                W,
+                H,
+                pngData
+                );
+
+
+
+
+
+    debug::log( "\n\n---------------------- END ----------------------\n" );
     return(0);
 }
 

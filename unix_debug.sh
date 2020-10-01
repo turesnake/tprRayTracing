@@ -9,10 +9,12 @@ DIR_out=${DIR_base}/build/publish/
 
 DIR_src_shaders=${DIR_base}/shaders/
 DIR_src_jsons=${DIR_base}/jsons/
+DIR_src_textures=${DIR_base}/textures/
 
 
 DIR_dst_shaders=${DIR_out}/shaders/
 DIR_dst_jsons=${DIR_out}/jsons/
+DIR_dst_textures=${DIR_out}/textures/
 
 
 echo -e "------------"
@@ -33,6 +35,10 @@ if [ ! -d "${DIR_dst_jsons}" ]; then
     mkdir -p ${DIR_dst_jsons}
 fi
 
+if [ ! -d "${DIR_dst_textures}" ]; then
+    mkdir -p ${DIR_dst_textures}
+fi
+
 
 # Access Permission
 chmod -R ug=rwx ${DIR_out}
@@ -43,6 +49,7 @@ chmod -R ug=rwx ${DIR_out}
 #:
 cp -R ${DIR_src_shaders}.   ${DIR_dst_shaders} 
 cp -R ${DIR_src_jsons}.     ${DIR_dst_jsons} 
+cp -R ${DIR_src_textures}.  ${DIR_dst_textures} 
 
 #------------- build cpp/c# ----------------
 cd build

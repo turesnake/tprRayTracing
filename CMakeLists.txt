@@ -163,6 +163,7 @@ target_include_directories ( rayTracingApp PUBLIC
     # === 第三方库 ===
     ${CMAKE_CURRENT_SOURCE_DIR}/deps/rapidjson
     ${CMAKE_CURRENT_SOURCE_DIR}/deps/fmt-6.1.2/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/deps/magic_enum
     # 在此处添加更多 第三方库
     # 具体写法，请查阅各个 库文档
     # ...
@@ -179,6 +180,7 @@ target_include_directories ( rayTracingApp PUBLIC
 # 添加在此的 第三方库，会被屏蔽掉一部分 warnings
 target_include_directories ( rayTracingApp SYSTEM PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/deps
+    ${CMAKE_CURRENT_SOURCE_DIR}/deps/stb_image
     ${CMAKE_CURRENT_SOURCE_DIR}/deps/glm.9.9.5
     )
 
@@ -188,6 +190,13 @@ target_include_directories ( rayTracingApp SYSTEM PUBLIC
 #---------------------------------------------------#
 #-- 子 CMakeLists.txt 执行的 中间产物，将分别放在 
 #      build/src  build/libhello  目录中。
+if( UNIX )
+    add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/tprInUnix)
+else()
+    add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/tprInWin)
+endif( UNIX )
+
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/deps/tprGeneral)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/fmt-6.1.2 EXCLUDE_FROM_ALL)
 
 
@@ -196,11 +205,15 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/fmt-6.1.2 EXCLUDE_FROM_ALL)
 #---------------------------------------------------#
 if ( UNIX )
     target_link_libraries( rayTracingApp
+                            tprGeneral
+                            tprInUnix
                             fmt
                             )
 
 else()
     target_link_libraries( rayTracingApp
+                            tprGeneral
+                            tprInUnix
                             fmt
                             )
 endif( UNIX )

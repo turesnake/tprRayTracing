@@ -28,6 +28,7 @@
 
 //-------------------- Engine --------------------//
 #include "innDebug.h"
+#include "tprAssert.h"
 
 #endif
 
