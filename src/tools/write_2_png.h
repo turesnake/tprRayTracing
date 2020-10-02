@@ -17,7 +17,8 @@
 void write_2_png(   const std::string &path_,
                     int w,
                     int h,
-                    const std::vector<RGBA> &data_ 
+                    const std::vector<RGBA> &data_,
+                    bool isFlip
                 );
 
 

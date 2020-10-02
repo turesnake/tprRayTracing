@@ -29,6 +29,10 @@
 //-------------------- Engine --------------------//
 #include "innDebug.h"
 #include "tprAssert.h"
+#include "config.h"
+#include "tprMath.h"
+
+
 
 #endif
 

@@ -67,6 +67,21 @@ public:
         return fmt::format( "RGBA:{0},{1},{2},{3};", this->r, this->g, this->b, this->a );
     }
 
+
+    static RGBA dvec3_2_RGBA( const glm::dvec3 &v_, uint8_t alpha_ ){
+        tprAssert(  v_.x >=0.0 && v_.x<=1.0 &&
+                    v_.y >=0.0 && v_.y<=1.0 &&
+                    v_.z >=0.0 && v_.z<=1.0 );
+        return RGBA{
+            static_cast<uint8_t>( v_.x * 255.999 ),
+            static_cast<uint8_t>( v_.y * 255.999 ),
+            static_cast<uint8_t>( v_.z * 255.999 ),
+            alpha_
+        };
+    }
+
+
+
     //======== vals ========//
     uint8_t r {0};
     uint8_t g {0};
