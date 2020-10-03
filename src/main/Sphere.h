@@ -14,6 +14,9 @@
 
 #include "Ray.h"
 #include "IHittable.h"
+#include "IMaterial.h"
+#include "HitRecord.h"
+
 
 #include <iostream>
 
@@ -21,9 +24,10 @@
 class Sphere : public IHittable{
 public:
 
-    Sphere( const glm::dvec3 &center_, double radius_ ):
+    Sphere( const glm::dvec3 &center_, double radius_, IMaterial *matPtr_ ):
         center(center_),
-        radius(radius_)
+        radius(radius_),
+        matPtr(matPtr_)
         {}
 
     const glm::dvec3 get_center()const{ return this->center; }
@@ -33,7 +37,7 @@ public:
     // return hit-t
     // 一元二次方程的解，实行了一点优化，改用 half_b 来取代 b，减少了一点点运算量
     //std::optional<double> is_hit_by_ray( const Ray &r_ ){
-    std::optional<HitRecord> hit( const Ray &r_, double tmin_, double tmax_ )const override{
+    bool hit( const Ray &r_, double tmin_, double tmax_, HitRecord &record_ )const override{
 
         glm::dvec3 rDir = r_.get_dir();
         glm::dvec3 oc = r_.get_origin() - this->center;// origin - center
@@ -53,20 +57,20 @@ public:
             if( !(t>tmin_ && t<tmax_) ){
                 t = ( -half_b + root ) / a; // far point
                 if( !(t>tmin_ && t<tmax_) ){
-                    return std::nullopt;
+                    return false;
                 }
             }
 
-            HitRecord hitRecord {};
-            hitRecord.t = t;
-            hitRecord.point = r_.at(t);
-            hitRecord.set_face_normal( r_, (hitRecord.point-this->center)/this->radius );
+            record_.t = t;
+            record_.point = r_.at(t);
+            record_.set_face_normal( r_, (record_.point-this->center)/this->radius );
                             // param_2 be norm
+            record_.matPtr = this->matPtr;
 
-            return { hitRecord };
+            return true;
 
         }else{
-            return std::nullopt;
+            return false;
         }
     }
 
@@ -74,9 +78,25 @@ public:
 private:
     glm::dvec3 center {};
     double     radius {};
-
-
+    IMaterial  *matPtr {};
 };
+
+
+// unit sphere: center={0,0,0}, radius=1;
+// create a pos on this sphere surface
+// for Lambertian Reflection probability distribution
+inline glm::dvec3 create_random_pos_on_unitSphere(){
+
+    double angle = tprMath::get_random_double( 0.0, 2.0*tprMath::pi );
+    double z = tprMath::get_random_double( -1.0, 1.0 );
+    double r = sqrt( 1.0 - z*z );
+    return glm::dvec3{ r*cos(angle), r*sin(angle), z };
+}
+
+
+
+
+
 
 
 

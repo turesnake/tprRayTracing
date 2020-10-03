@@ -19,24 +19,32 @@
 
 #include "global.h"
 
+#include "WorldObjs.h"
+
 
 //tmp
 #include "tprGeneral.h"
 #include "Ray.h"
+#include "HitRecord.h"
 #include "Camera.h"
 #include "Sphere.h"
 
 #include <iostream>
 
 
+
 std::string get_current_time_str();
-RGBA calc_ray_color( const Ray &r_ );
+glm::dvec3 calc_ray_color( const Ray &r_, int boundN_ );
+
+
 
 
 // all spheres in screne
-std::vector<Sphere> spheres {};
+std::vector<std::unique_ptr<Sphere>> spheres {};
 
-std::vector<IHittable*> hittablePtrs {};
+WorldObjs worldObjs {};
+
+
 
 
 
@@ -46,46 +54,64 @@ int main( int argc, char* argv[] ){
     //                 prepare
     //------------------------------------------//
     prepare( argv[0] );
-
     
+    debug::log("SCREEN = {}, {}", IMAGE_W<>, IMAGE_H<> );
+
     //==========================================//
     //               test
     //------------------------------------------//
     //...
-
-    debug::log("SCREEN = {}, {}", 
-        IMAGE_W<>,
-        IMAGE_H<>
-    );
+    /*
+    for( int i=0; i<20; i++ ){
+        debug::log( "{}", tprMath::get_random_double( -1.0, 1.0 ) );
+    }
+    */
+    //return 0;
 
     //==========================================//
     //               tmp works
     //------------------------------------------//
-
     Camera camera {};
 
-    spheres.push_back( Sphere{ glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5 } );
+    //----- objs -----//
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5 ) );
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0 ) );//ground
 
-    for( auto &sphere : spheres ){
-        hittablePtrs.push_back( &sphere );
+
+    for( auto &sphereUPtr : spheres ){
+        worldObjs.add( sphereUPtr.get() );
     }
 
-    std::vector<RGBA> pngData ( IMAGE_W<> * IMAGE_H<>, RGBA{ 255, 0, 0, 255 } );
 
+
+    //----- rendering -----//
+    std::vector<RGBA> pngData ( IMAGE_W<> * IMAGE_H<>, RGBA{ 255, 0, 0, 255 } );
 
     debug::log("Start Rendering:");
     for( int h=0; h<IMAGE_H<>; h++ ){// bottom -> top
-        std::cout<<".";// progress indicator
+        std::cout<<"."<<std::flush;// progress indicator
         for( int w=0; w<IMAGE_W<>; w++ ){// left -> right
-            int idx = h*IMAGE_W<> + w;
+            size_t idx = static_cast<size_t>( h*IMAGE_W<> + w );
 
-            double u = static_cast<double>(w)/static_cast<double>(IMAGE_W<> - 1);//[0.0,1.0]
-            double v = static_cast<double>(h)/static_cast<double>(IMAGE_H<> - 1);//[0.0,1.0]
+            glm::dvec3 colorSum {};
 
-            Ray r  = camera.create_a_ray( u,v );
+            for( int s=0; s<SAMPLES_PER_PIX<>; s++ ){
+                double u = (w + tprMath::get_random_double()) / (IMAGE_W<double>-1.0);//[0.0,1.0]
+                double v = (h + tprMath::get_random_double()) / (IMAGE_H<double>-1.0);//[0.0,1.0]
+                Ray r  = camera.create_a_ray( u,v );
+                colorSum += calc_ray_color( r, BOUNDS_NUM<> );
+            }
 
-            pngData.at(idx) = calc_ray_color( r );
+            //--- calc the average-val of all samples in one pix ---
+            double scale = 1.0 / SAMPLES_PER_PIX<double>;
+            // gamma by sqrt
+            double r = sqrt( colorSum.x * scale );
+            double g = sqrt( colorSum.y * scale );
+            double b = sqrt( colorSum.z * scale );
 
+            pngData.at(idx) = RGBA::dvec3_2_RGBA( glm::dvec3{r,g,b}, 255 );
+
+            //debug::log( "{},{},{}", pngData.at(idx).r, pngData.at(idx).g, pngData.at(idx).b );
 
         }
     }
@@ -102,6 +128,14 @@ int main( int argc, char* argv[] ){
 
 
     debug::log( "\n\n---------------------- END ----------------------\n" );
+
+
+    if( current_OS == OS_WIN32 ){
+        debug::log( "Please type any KEY ans RETURN to end the app:" );
+        int inputStr {};
+        std::cin >> inputStr;
+    }
+
     return(0);
 }
 
@@ -124,23 +158,20 @@ std::string get_current_time_str(){
 }
 
 
-RGBA calc_ray_color( const Ray &r_ ){
+// create a render-color in the format of dvec3 [0.0, 1.0]
+glm::dvec3 calc_ray_color( const Ray &r_, int boundN_ ){
+
+    if(boundN_==0){ return glm::dvec3{ 1.0, 0.0, 0.0 }; }// red
 
     //--- render the spheres ---//
-    
-    for( auto objPtr : hittablePtrs ){
+    auto hitRecord = worldObjs.hit( r_, 0.001, tprMath::infinity );
+    if( hitRecord.has_value() ){
+        HitRecord &hret = hitRecord.value();
 
-        auto hitRet = objPtr->hit( r_, -100.01, 100.0 );
-        if( hitRet.has_value() ){
+        glm::dvec3 tgt = hret.point + hret.normal + create_random_pos_on_unitSphere();
 
-            HitRecord &hret = hitRet.value();
+        return 0.5 * calc_ray_color( Ray{ hret.point, tgt-hret.point }, boundN_-1 );// recursive
 
-            glm::dvec3 c { hret.normal.x+1.0, hret.normal.y+1.0, hret.normal.z+1.0 };
-            c *= 0.5;
-
-            return RGBA::dvec3_2_RGBA( c, 255 );
-
-        }
     }
 
     //--- render the sky ---//
@@ -150,15 +181,11 @@ RGBA calc_ray_color( const Ray &r_ ){
 
     glm::dvec3 color_white { 1.0, 1.0, 1.0 };// white
     glm::dvec3 color_lightBlue { 0.5, 0.7, 1.0 };// blue
-
-    glm::dvec3 skyColor = tprMath::lerp( color_white, color_lightBlue, t );
-
-
-    return RGBA::dvec3_2_RGBA( skyColor, 255 );
+    //glm::dvec3 color_lightBlue { 0.65, 1.0, 0.2 };// blue
 
     
-
-
+    glm::dvec3 skyColor = tprMath::lerp( color_white, color_lightBlue, t );
+    return skyColor;
 }
 
 

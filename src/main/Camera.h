@@ -20,18 +20,18 @@ public:
         // set by hand...
         this->originPoint = glm::dvec3{ 0.0, 0.0, 0.0 };
 
-        this->viewport_height = 2.0;
-        this->viewport_width = this->viewport_height * ASPECT_RATIO<>;
+        this->plane_height = 2.0;
+        this->plane_width = this->plane_height * ASPECT_RATIO<>;
         this->focal_length = 1.0;
 
-        this->left_2_right = glm::dvec3{ this->viewport_width, 0.0, 0.0 };
-        this->bottom_2_top = glm::dvec3{ 0.0, this->viewport_height, 0.0 };
+        this->left_2_right = glm::dvec3{ this->plane_width, 0.0, 0.0 };
+        this->bottom_2_top = glm::dvec3{ 0.0, this->plane_height, 0.0 };
 
         this->leftBottomPoint = 
             this->originPoint - this->left_2_right*0.5 - this->bottom_2_top*0.5
             - glm::dvec3{ 0.0, 0.0, this->focal_length };
 
-    };
+    }
 
 
     // a ray from viewport to render plane
@@ -49,8 +49,8 @@ public:
     glm::dvec3 originPoint     {};// viewport
     glm::dvec3 leftBottomPoint {};
 
-    double viewport_width {};
-    double viewport_height {};
+    double plane_width {};
+    double plane_height {};
     double focal_length {};// distance from viewport to render plane
 
     glm::dvec3 left_2_right {};// vector

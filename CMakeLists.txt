@@ -213,7 +213,7 @@ if ( UNIX )
 else()
     target_link_libraries( rayTracingApp
                             tprGeneral
-                            tprInUnix
+                            tprInWin
                             fmt
                             )
 endif( UNIX )

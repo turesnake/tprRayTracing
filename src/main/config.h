@@ -19,8 +19,9 @@ template<typename T = int> constexpr T IMAGE_W {
 };
 
 
+template<typename T = double> constexpr T SAMPLES_PER_PIX { 100 };
 
-
+template<typename T = int> constexpr T BOUNDS_NUM { 13 };
 
 
 

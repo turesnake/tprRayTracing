@@ -11,6 +11,8 @@
 #include "glm_no_warnings.h"
 
 #include <cmath>
+#include <limits>
+#include <random>
 
 #include "tprAssert.h"
 
@@ -21,10 +23,18 @@
 namespace tprMath {//-------- namespace: tprMath --------------//
 
 
-glm::dvec3 lerp( const glm::dvec3 &a_, const glm::dvec3 &b_, double t_ ){
+const double infinity = std::numeric_limits<double>::infinity();
+const double pi = 3.1415926535897932385;
+
+
+inline glm::dvec3 lerp( const glm::dvec3 &a_, const glm::dvec3 &b_, double t_ ){
     tprAssert( t_>=0.0 && t_<=1.0 );
     return (1.0-t_) * a_ + t_*b_;
 }
+
+
+double get_random_double();
+double get_random_double( double min_, double max_ );
 
 
 
