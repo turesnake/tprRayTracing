@@ -17,13 +17,13 @@ class HitRecord;
 
 class IMaterial{
 public:
-    explicit IMaterial()=default;
+    IMaterial()=default;
     virtual ~IMaterial()=default;//MUST
 
-    virtual bool scatter(   const Ray &rIn_, 
+    virtual bool scatter(   const Ray       &rIn_, 
                             const HitRecord &hitRec_,
-                            glm::dvec3 &attenuation_,
-                            Ray &scattered_
+                            glm::dvec3      &attenuation_, // out
+                            Ray             &rScattered_ // out
                         )const=0;
 };
 

@@ -16,7 +16,7 @@
 
 class Ray{
 public:
-    explicit Ray() = default;
+    Ray() = default;
     Ray(const glm::dvec3 &origin_, 
         const glm::dvec3 &dir_ ):
         origin(origin_),

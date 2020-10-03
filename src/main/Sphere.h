@@ -82,19 +82,6 @@ private:
 };
 
 
-// unit sphere: center={0,0,0}, radius=1;
-// create a pos on this sphere surface
-// for Lambertian Reflection probability distribution
-inline glm::dvec3 create_random_pos_on_unitSphere(){
-
-    double angle = tprMath::get_random_double( 0.0, 2.0*tprMath::pi );
-    double z = tprMath::get_random_double( -1.0, 1.0 );
-    double r = sqrt( 1.0 - z*z );
-    return glm::dvec3{ r*cos(angle), r*sin(angle), z };
-}
-
-
-
 
 
 

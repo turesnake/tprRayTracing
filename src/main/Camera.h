@@ -16,7 +16,7 @@
 
 class Camera{
 public:
-    explicit Camera(){
+    Camera(){
         // set by hand...
         this->originPoint = glm::dvec3{ 0.0, 0.0, 0.0 };
 

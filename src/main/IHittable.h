@@ -16,7 +16,7 @@ class HitRecord;
 
 class IHittable{
 public:
-    explicit IHittable()=default;
+    IHittable()=default;
     virtual ~IHittable()=default;// MUST
     virtual bool hit( const Ray &r_, double tmin_, double tmax_, HitRecord &record_ )const=0;
 };

@@ -29,6 +29,10 @@
 #include "Camera.h"
 #include "Sphere.h"
 
+#include "Lambertian.h"
+#include "Metal.h"
+
+
 #include <iostream>
 
 
@@ -69,13 +73,24 @@ int main( int argc, char* argv[] ){
     //return 0;
 
     //==========================================//
-    //               tmp works
+    //             mats, objs
     //------------------------------------------//
     Camera camera {};
 
+    //----- mats -----//
+    auto mat_lambt_ground = std::make_unique<Lambertian>( glm::dvec3{ 0.8, 0.8, 0.0 } );
+    auto mat_lambt_centerObj = std::make_unique<Lambertian>( glm::dvec3{ 0.7, 0.3, 0.3 } );
+    auto mat_metal_leftObj = std::make_unique<Metal>( glm::dvec3{ 0.8, 0.8, 0.8 }, 0.3 );
+    auto mat_metal_rightObj = std::make_unique<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 1.0 );
+
+
     //----- objs -----//
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5 ) );
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0 ) );//ground
+    // ground sphere
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0, mat_lambt_ground.get() ) );
+    // oth spheres
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5, mat_lambt_centerObj.get() ) );
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, 0.5, mat_metal_leftObj.get() ) );
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 1.0, 0.0, -1.0 }, 0.5, mat_metal_rightObj.get() ) );
 
 
     for( auto &sphereUPtr : spheres ){
@@ -83,8 +98,9 @@ int main( int argc, char* argv[] ){
     }
 
 
-
-    //----- rendering -----//
+    //==========================================//
+    //              rendering
+    //------------------------------------------//
     std::vector<RGBA> pngData ( IMAGE_W<> * IMAGE_H<>, RGBA{ 255, 0, 0, 255 } );
 
     debug::log("Start Rendering:");
@@ -168,10 +184,14 @@ glm::dvec3 calc_ray_color( const Ray &r_, int boundN_ ){
     if( hitRecord.has_value() ){
         HitRecord &hret = hitRecord.value();
 
-        glm::dvec3 tgt = hret.point + hret.normal + create_random_pos_on_unitSphere();
+        Ray rScattered {};
+        glm::dvec3 attenuation {};
 
-        return 0.5 * calc_ray_color( Ray{ hret.point, tgt-hret.point }, boundN_-1 );// recursive
-
+        if( hret.matPtr->scatter(r_, hret, attenuation, rScattered) ){
+            return attenuation * calc_ray_color( rScattered, boundN_-1 );// recursive
+        }else{
+            return glm::dvec3{ 1.0, 0.0, 0.0 };
+        }
     }
 
     //--- render the sky ---//

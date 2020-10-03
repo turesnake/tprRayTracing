@@ -19,7 +19,7 @@
 
 class WorldObjs{
 public:
-    explicit WorldObjs()=default;
+    WorldObjs()=default;
 
     void add( IHittable *objPtr_ ){
         this->objPtrs.push_back( objPtr_ );
