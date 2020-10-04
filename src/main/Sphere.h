@@ -63,8 +63,10 @@ public:
 
             record_.t = t;
             record_.point = r_.at(t);
-            record_.set_face_normal( r_, (record_.point-this->center)/this->radius );
-                            // param_2 be norm
+
+            glm::dvec3 normDir = glm::normalize( record_.point - this->center );
+            record_.set_face_normal( r_, this->radius>0.0 ? normDir : -normDir );
+                    // trick: if the radius is negative, we can build a inn-sphere (i.e. glass-ball)
             record_.matPtr = this->matPtr;
 
             return true;
@@ -77,7 +79,7 @@ public:
 
 private:
     glm::dvec3 center {};
-    double     radius {};
+    double     radius {}; // can be negative
     IMaterial  *matPtr {};
 };
 

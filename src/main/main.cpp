@@ -31,6 +31,7 @@
 
 #include "Lambertian.h"
 #include "Metal.h"
+#include "Dielectric.h"
 
 
 #include <iostream>
@@ -45,11 +46,13 @@ glm::dvec3 calc_ray_color( const Ray &r_, int boundN_ );
 
 // all spheres in screne
 std::vector<std::unique_ptr<Sphere>> spheres {};
+std::vector<std::unique_ptr<IMaterial>> matPtrs {};
 
 WorldObjs worldObjs {};
 
 
-
+void create_objs_1();
+void create_objs_2();
 
 
 int main( int argc, char* argv[] ){
@@ -75,27 +78,39 @@ int main( int argc, char* argv[] ){
     //==========================================//
     //             mats, objs
     //------------------------------------------//
-    Camera camera {};
+
+    //----- camera -----//
+    Camera camera { glm::dvec3{ -2.0, 1.0, 1.0 },// lookfrom
+                    glm::dvec3{ 0.0, 0.0, -1.0 },// lookat
+                    glm::dvec3{ 0.0, 1.0, 0.0 },// world-up
+                    20, 
+                    ASPECT_RATIO<> };
+
 
     //----- mats -----//
-    auto mat_lambt_ground = std::make_unique<Lambertian>( glm::dvec3{ 0.8, 0.8, 0.0 } );
-    auto mat_lambt_centerObj = std::make_unique<Lambertian>( glm::dvec3{ 0.7, 0.3, 0.3 } );
-    auto mat_metal_leftObj = std::make_unique<Metal>( glm::dvec3{ 0.8, 0.8, 0.8 }, 0.3 );
-    auto mat_metal_rightObj = std::make_unique<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 1.0 );
-
-
     //----- objs -----//
-    // ground sphere
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0, mat_lambt_ground.get() ) );
-    // oth spheres
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5, mat_lambt_centerObj.get() ) );
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, 0.5, mat_metal_leftObj.get() ) );
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 1.0, 0.0, -1.0 }, 0.5, mat_metal_rightObj.get() ) );
+    //create_objs_1();
+    create_objs_2();
+    
 
+    /*
+    // two balls
+    auto mat_left = std::make_unique<Lambertian>( glm::dvec3{ 0.0, 0.0, 1.0 } );
+    auto mat_right = std::make_unique<Lambertian>( glm::dvec3{ 1.0, 0.0, 0.0 } );
 
+    double R = cos( tprMath::pi / 4.0 );
+    //double R = 1.0;
+
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ -R, 0.0, -1.0 }, R, mat_left.get() ) );
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{  R, 0.0, -1.0 }, R, mat_right.get() ) );
+    */
+    
+
+    // worldObjs 
     for( auto &sphereUPtr : spheres ){
         worldObjs.add( sphereUPtr.get() );
     }
+    
 
 
     //==========================================//
@@ -178,6 +193,7 @@ std::string get_current_time_str(){
 glm::dvec3 calc_ray_color( const Ray &r_, int boundN_ ){
 
     if(boundN_==0){ return glm::dvec3{ 1.0, 0.0, 0.0 }; }// red
+    //if(boundN_==0){ return glm::dvec3{ 0.0, 0.0, 0.0 }; }// no light return
 
     //--- render the spheres ---//
     auto hitRecord = worldObjs.hit( r_, 0.001, tprMath::infinity );
@@ -209,6 +225,83 @@ glm::dvec3 calc_ray_color( const Ray &r_, int boundN_ ){
 }
 
 
+
+
+IMaterial *create_mat( std::unique_ptr<IMaterial> uptr ){
+    matPtrs.push_back( std::move( uptr ) );
+    return matPtrs.back().get();
+}
+
+
+void create_objs_1(){
+
+    //----- mats -----//
+    IMaterial *mat_lambt_ground = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.8, 0.8, 0.0 } ) );
+
+    IMaterial *mat_lambt_egg     = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.7, 0.3, 0.3 } ) );
+    IMaterial *mat_lambt_midblue = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.1, 0.2, 0.5 } ) );
+
+    IMaterial *mat_metal_silver = create_mat( std::make_unique<Metal>( glm::dvec3{ 0.8, 0.8, 0.8 }, 0.3 ) );
+    IMaterial *mat_metal_gold_fuzz = create_mat( std::make_unique<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 1.0 ) );
+    IMaterial *mat_metal_gold = create_mat( std::make_unique<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 0.0 ) );
+
+    IMaterial *mat_diel_glass = create_mat( std::make_unique<Dielectric>( 1.5 ) );
+
+
+    //----- objs -----//
+    // ground sphere
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0, mat_lambt_ground ) );
+
+    // center
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5, mat_lambt_midblue ) );
+
+    // left
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, 0.5, mat_diel_glass ) );
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, -0.45, mat_diel_glass ) );
+    
+    // right
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 1.0, 0.0, -1.0 }, 0.5, mat_metal_gold ) );
+
+}
+
+
+void create_objs_2(){
+
+    //----- mats -----//
+    IMaterial *mat_lambt_ground = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.8, 0.8, 0.0 } ) );
+
+    IMaterial *mat_lambt_egg     = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.7, 0.3, 0.3 } ) );
+    IMaterial *mat_lambt_midblue = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.1, 0.2, 0.5 } ) );
+
+    IMaterial *mat_metal_silver = create_mat( std::make_unique<Metal>( glm::dvec3{ 0.8, 0.8, 0.8 }, 0.3 ) );
+    IMaterial *mat_metal_gold_fuzz = create_mat( std::make_unique<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 1.0 ) );
+    IMaterial *mat_metal_gold = create_mat( std::make_unique<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 0.0 ) );
+
+    IMaterial *mat_diel_glass = create_mat( std::make_unique<Dielectric>( 1.5 ) );
+    IMaterial *mat_diel_diamond = create_mat( std::make_unique<Dielectric>( 2.4 ) );
+
+
+    //----- objs -----//
+    // ground sphere
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0, mat_lambt_ground ) );
+
+    // center
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5, mat_diel_diamond ) );
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, -0.45, mat_diel_diamond ) );
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.3, mat_metal_gold ) );
+
+
+    // left
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, 0.5, mat_diel_glass ) );
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, -0.45, mat_diel_glass ) );
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, 0.35, mat_lambt_midblue ) );
+
+    // right
+    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 1.0, 0.0, -1.0 }, 0.5, mat_metal_silver ) );
+
+
+
+}
 
 
 

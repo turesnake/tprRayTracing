@@ -29,11 +29,11 @@ public:
                     Ray             &rScattered_ // out
                 )const override{
 
-       glm::dvec3 reflectDir = reflect( glm::normalize(rIn_.get_dir()), hitRec_.normal );
-       rScattered_ = Ray(   hitRec_.point, 
+        glm::dvec3 reflectDir = reflect( glm::normalize(rIn_.get_dir()), hitRec_.normal );
+        rScattered_ = Ray(  hitRec_.point, 
                             reflectDir + this->fuzz*create_random_pos_in_unitSphere() );
-       attenuation_ = this->albedo;
-       return ( glm::dot(reflectDir, hitRec_.normal) > 0.0 );// same hemisphere
+        attenuation_ = this->albedo;
+        return ( glm::dot(reflectDir, hitRec_.normal) > 0.0 );// same hemisphere
     }
 
 private:
