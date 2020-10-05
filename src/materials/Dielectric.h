@@ -15,6 +15,8 @@
 #include "HitRecord.h"
 #include "distribution.h"
 
+#include <algorithm>
+
 
 // glass
 class Dielectric : public IMaterial {
@@ -38,7 +40,7 @@ public:
         glm::dvec3 normRayDir = glm::normalize(rIn_.get_dir());
 
         //--- total internal reflection ---//
-        double cosA = std::min( glm::dot(-normRayDir, hitRec_.normal), 1.0 );
+        double cosA = std::min<double>( glm::dot(-normRayDir, hitRec_.normal), 1.0 );
         double sinA = sqrt( 1.0 - cosA*cosA );
         if( etaA_over_etaB * sinA > 1.0 ){
             glm::dvec3 reflectDir = reflect( normRayDir, hitRec_.normal );

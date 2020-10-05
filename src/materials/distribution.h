@@ -57,6 +57,22 @@ inline glm::dvec3 create_random_pos_in_unitSphere(){
 }
 
 
+inline glm::dvec3 create_random_pos_in_unitDisk(){
+    while (true){
+        glm::dvec3 v {
+            tprMath::get_random_double( -1.0, 1.0 ),
+            tprMath::get_random_double( -1.0, 1.0 ),
+            0.0
+        };
+        double len = glm::length(v);
+        if( len*len < 1.0 ){
+            return v;
+        }
+    }
+}
+
+
+
 // ray from mat_A to mat_B
 // etaA_over_etaB_ = refractIndex_A / refractIndex_B
 // ...

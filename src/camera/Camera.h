@@ -12,6 +12,7 @@
 #include "pch.h"
 
 #include "Ray.h"
+#include "distribution.h"
 
 
 class Camera{
@@ -20,28 +21,30 @@ public:
             glm::dvec3 lookat_, // pos
             glm::dvec3 vup_,    // vertical-up (world y-up)
             double vfovDegree_, // vertical field-of-view in degrees
-            double aspect_ratio_
+            double aspect_ratio_,
+            double aperture_, // 光圈
+            double focus_dist_ // 焦距
     ){
         // fov plane
         double radian = glm::radians( vfovDegree_ );
-        double plane_height = 2.0 * tan(radian*0.5);
-        double plane_width = plane_height * aspect_ratio_;
-        //double focal_length = 1.0;
+        // viewport height,width: unit length
+        double viewport_height = 2.0 * tan(radian*0.5);
+        double viewport_width = viewport_height * aspect_ratio_;
 
         // rotation
-        // local-coord:{u,v,w} just like {x,y,z}
-        // both u,v,w are normal-vector
-        glm::dvec3 w = - glm::normalize( lookat_ - lookfrom_ );
-        glm::dvec3 u = glm::normalize( glm::cross( vup_, w ) );
-        glm::dvec3 v = glm::cross( w, u );
+        w = - glm::normalize( lookat_ - lookfrom_ );
+        u = glm::normalize( glm::cross( vup_, w ) );
+        v = glm::cross( w, u );
 
         this->originPoint = lookfrom_;
 
-        this->left_2_right = plane_width * u;
-        this->bottom_2_top = plane_height * v;
+        this->left_2_right = focus_dist_ * viewport_width * u;
+        this->bottom_2_top = focus_dist_ * viewport_height * v;
 
         this->leftBottomPoint = 
-            this->originPoint - this->left_2_right*0.5 - this->bottom_2_top*0.5 - w;
+            this->originPoint - this->left_2_right*0.5 - this->bottom_2_top*0.5 - focus_dist_*w;
+
+        this->lens_radius = aperture_ * 0.5;
     }
 
 
@@ -49,12 +52,17 @@ public:
     // s_:u
     // t_:v
     Ray create_a_ray( double s_, double t_ ){
+
+        glm::dvec3 rd = this->lens_radius * create_random_pos_in_unitDisk();
+        glm::dvec3 off = this->u*rd.x + this->v*rd.y;
+
         glm::dvec3 rayDir =
             this->leftBottomPoint + 
             this->left_2_right * s_ +
             this->bottom_2_top * t_ -
             this->originPoint;
-        return Ray{ this->originPoint, rayDir };
+        return Ray{ this->originPoint + off,
+                    rayDir - off };
     }
 
 
@@ -64,6 +72,14 @@ private:
 
     glm::dvec3 left_2_right {};// vector
     glm::dvec3 bottom_2_top {};// vector
+
+    // local-coord:{u,v,w} just like {x,y,z}
+    // both u,v,w are normal-vector
+    glm::dvec3 u {};
+    glm::dvec3 v {};
+    glm::dvec3 w {};
+
+    double lens_radius {};
 
 };
 

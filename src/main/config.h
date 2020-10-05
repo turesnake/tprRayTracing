@@ -10,18 +10,18 @@
 #define TPR_CONFIG_H
 
 
-template<typename T = double> constexpr T ASPECT_RATIO { 16.0/9.0 };
+template<typename T = double> constexpr T ASPECT_RATIO { 3.0 / 2.0 };
 
 // image size [pix]
-template<typename T = int> constexpr T IMAGE_H { 200 };
+template<typename T = int> constexpr T IMAGE_H { 720 };
 template<typename T = int> constexpr T IMAGE_W { 
     static_cast<int>(IMAGE_H<double> * ASPECT_RATIO<>) 
 };
 
 
-template<typename T = double> constexpr T SAMPLES_PER_PIX { 100 };
+template<typename T = double> constexpr T SAMPLES_PER_PIX { 177 };// spp
 
-template<typename T = int> constexpr T BOUNDS_NUM { 11 };
+template<typename T = int> constexpr T BOUNDS_NUM { 31 };
 
 
 
