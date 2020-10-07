@@ -28,6 +28,7 @@
 #include "HitRecord.h"
 #include "Camera.h"
 #include "Sphere.h"
+#include "MovingSphere.h"
 
 #include "Lambertian.h"
 #include "Metal.h"
@@ -46,6 +47,7 @@ glm::dvec3 calc_ray_color( const Ray &r_, int boundN_ );
 
 // all spheres in screne
 std::vector<std::unique_ptr<Sphere>> spheres {};
+std::vector<std::unique_ptr<MovingSphere>> movingSpheres {};// tmp
 std::vector<std::unique_ptr<IMaterial>> matPtrs {};
 
 WorldObjs worldObjs {};
@@ -69,6 +71,8 @@ int main( int argc, char* argv[] ){
     //               test
     //------------------------------------------//
     //...
+
+    // switch the random seed
     for( int i=0; i<27; i++ ){
         double d = tprMath::get_random_double();
     }
@@ -91,7 +95,9 @@ int main( int argc, char* argv[] ){
                     20, 
                     ASPECT_RATIO<>,
                     aperture,
-                    dist_to_focus
+                    dist_to_focus,
+                    0.0,
+                    1.0
                 };
 
 
@@ -104,6 +110,9 @@ int main( int argc, char* argv[] ){
 
     // worldObjs 
     for( auto &sphereUPtr : spheres ){
+        worldObjs.add( sphereUPtr.get() );
+    }
+    for( auto &sphereUPtr : movingSpheres ){
         worldObjs.add( sphereUPtr.get() );
     }
     
@@ -335,7 +344,14 @@ void create_scene_3(){
                     // diffuse
                     glm::dvec3 albedo = get_random_color();
                     IMaterial *mat = create_mat( std::make_unique<Lambertian>( albedo ) );
-                    spheres.push_back( std::make_unique<Sphere>( center, 0.2, mat ) );
+                    
+                    glm::dvec3 center2 = center + glm::dvec3{
+                        0.0, 
+                        tprMath::get_random_double( 0.0, 0.5 ),
+                        0.0
+                    };
+
+                    movingSpheres.push_back( std::make_unique<MovingSphere>( center, center2, 0.0, 1.0, 0.2, mat ) );
 
                 }else if( choose_mat < 0.9 ){
                     // metal

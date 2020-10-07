@@ -23,8 +23,13 @@ public:
             double vfovDegree_, // vertical field-of-view in degrees
             double aspect_ratio_,
             double aperture_, // 光圈
-            double focus_dist_ // 焦距
-    ){
+            double focus_dist_, // 焦距
+            double time0_=0.0,
+            double time1_=0.0
+    ):
+    time0(time0_),
+    time1(time1_)
+    {
         // fov plane
         double radian = glm::radians( vfovDegree_ );
         // viewport height,width: unit length
@@ -62,7 +67,9 @@ public:
             this->bottom_2_top * t_ -
             this->originPoint;
         return Ray{ this->originPoint + off,
-                    rayDir - off };
+                    rayDir - off,
+                    tprMath::get_random_double( this->time0, this->time1 )
+                    };
     }
 
 
@@ -80,6 +87,11 @@ private:
     glm::dvec3 w {};
 
     double lens_radius {};
+
+    // in current design,the camera just used once!
+    // so, the render time period is static (only one period)
+    double time0 {};
+    double time1 {};
 
 };
 

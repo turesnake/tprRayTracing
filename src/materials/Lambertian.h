@@ -30,7 +30,7 @@ public:
                 )const override{
 
         glm::dvec3 scatterDir =  hitRec_.normal + create_random_pos_on_unitSphere();
-        rScattered_ = Ray( hitRec_.point, scatterDir );
+        rScattered_ = Ray( hitRec_.point, scatterDir, rIn_.get_time() );
         attenuation_ = this->albedo;
         return true;           
     }

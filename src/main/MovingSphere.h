@@ -1,14 +1,14 @@
 /*
- * ========================= Sphere.h ==========================
+ * ======================= MovingSphere.h ==========================
  *                          -- tpr --
- *                                        CREATE -- 2020.10.02
+ *                                        CREATE -- 2020.10.07
  *                                        MODIFY --
  * ----------------------------------------------------------
  *   implicit sphere
  * ----------------------------
  */
-#ifndef TPR_SPHERE_H
-#define TPR_SPHERE_H
+#ifndef TPR_MOVING_SPHERE_H
+#define TPR_MOVING_SPHERE_H
 
 #include "pch.h"
 
@@ -21,19 +21,29 @@
 #include <iostream>
 
 
-class Sphere : public IHittable{
+class MovingSphere : public IHittable{
 public:
 
-    Sphere( const glm::dvec3 &center_, 
-            double radius_, 
-            IMaterial *matPtr_ 
+    MovingSphere(   const glm::dvec3 &center0_, 
+                    const glm::dvec3 &center1_,
+                    double time0_,
+                    double time1_,
+                    double radius_, 
+                    IMaterial *matPtr_ 
         ):
-        center(center_),
+        center0(center0_),
+        center1(center1_),
+        time0(time0_),
+        time1(time1_),
         radius(radius_),
         matPtr(matPtr_)
         {}
 
-    const glm::dvec3 get_center()const{ return this->center; }
+    const glm::dvec3 get_center( double t_ )const{ 
+        glm::dvec3 off = center1 - center0;
+        return center0 + ((t_-time0)/(time1-time0)) * off;
+    }
+
     double get_radius()const{ return this->radius; }
 
 
@@ -42,8 +52,10 @@ public:
     //std::optional<double> is_hit_by_ray( const Ray &r_ ){
     bool hit( const Ray &r_, double tmin_, double tmax_, HitRecord &record_ )const override{
 
+        glm::dvec3 currentCenter = this->get_center(r_.get_time());
+
         glm::dvec3 rDir = r_.get_dir();
-        glm::dvec3 oc = r_.get_origin() - this->center;// origin - center
+        glm::dvec3 oc = r_.get_origin() - currentCenter;// origin - center
        
         double a = glm::dot( rDir, rDir );
         double half_b = glm::dot( rDir, oc );
@@ -67,7 +79,7 @@ public:
             record_.t = t;
             record_.point = r_.at(t);
 
-            glm::dvec3 normDir = glm::normalize( record_.point - this->center );
+            glm::dvec3 normDir = glm::normalize( record_.point - currentCenter );
             record_.set_face_normal( r_, this->radius>0.0 ? normDir : -normDir );
                     // trick: if the radius is negative, we can build a inn-sphere (i.e. glass-ball)
             record_.matPtr = this->matPtr;
@@ -81,9 +93,16 @@ public:
 
 
 private:
-    glm::dvec3 center {};
+    glm::dvec3 center0 {};
+    glm::dvec3 center1 {};
+
+    double time0 {};
+    double time1 {};
+
     double     radius {}; // can be negative
     IMaterial  *matPtr {};
+
+    
 };
 
 
