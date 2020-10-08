@@ -23,21 +23,22 @@
 
 class MovingSphere : public IHittable{
 public:
+    static MovingSphere *factory(const glm::dvec3 &center0_, 
+                                const glm::dvec3 &center1_,
+                                double time0_,
+                                double time1_,
+                                double radius_, 
+                                IMaterial *matPtr_ 
+    ){
+        MovingSphere::movingSphereUPtrs.emplace_back( std::move(
+            new MovingSphere( center0_, center1_, time0_, time1_, radius_, matPtr_ )
+        ));
+        return MovingSphere::movingSphereUPtrs.back().get();
+    }
 
-    MovingSphere(   const glm::dvec3 &center0_, 
-                    const glm::dvec3 &center1_,
-                    double time0_,
-                    double time1_,
-                    double radius_, 
-                    IMaterial *matPtr_ 
-        ):
-        center0(center0_),
-        center1(center1_),
-        time0(time0_),
-        time1(time1_),
-        radius(radius_),
-        matPtr(matPtr_)
-        {}
+    static std::vector<std::unique_ptr<MovingSphere>> &get_movingSphereUPtrs(){
+        return MovingSphere::movingSphereUPtrs;
+    }
 
     const glm::dvec3 get_center( double t_ )const{ 
         glm::dvec3 off = center1 - center0;
@@ -92,7 +93,37 @@ public:
     }
 
 
+    bool bounding_box( double t0_, double t1_, AABB &output_aabb_ )const override{
+        glm::dvec3 rv { this->radius, this->radius, this->radius };
+        AABB a = AABB{
+            this->center0 - rv,
+            this->center0 + rv,
+        };
+        AABB b = AABB{
+            this->center1 - rv,
+            this->center1 + rv,
+        };
+        output_aabb_ = AABB::surrounding_box( a, b );
+        return true;
+    }
+
+
 private:
+    MovingSphere(   const glm::dvec3 &center0_, 
+                    const glm::dvec3 &center1_,
+                    double time0_,
+                    double time1_,
+                    double radius_, 
+                    IMaterial *matPtr_ 
+        ):
+        center0(center0_),
+        center1(center1_),
+        time0(time0_),
+        time1(time1_),
+        radius(radius_),
+        matPtr(matPtr_)
+        {}
+
     glm::dvec3 center0 {};
     glm::dvec3 center1 {};
 
@@ -102,14 +133,11 @@ private:
     double     radius {}; // can be negative
     IMaterial  *matPtr {};
 
+    static std::vector<std::unique_ptr<MovingSphere>> movingSphereUPtrs;
     
 };
 
-
-
-
-
-
+inline std::vector<std::unique_ptr<MovingSphere>> MovingSphere::movingSphereUPtrs {};
 
 
 #endif 

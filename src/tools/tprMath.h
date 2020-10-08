@@ -33,6 +33,10 @@ inline glm::dvec3 lerp( const glm::dvec3 &a_, const glm::dvec3 &b_, double t_ ){
 }
 
 
+
+
+int get_random_int( int min_, int max_ );// [min_,max_]
+
 double get_random_double();
 double get_random_double( double min_, double max_ );
 

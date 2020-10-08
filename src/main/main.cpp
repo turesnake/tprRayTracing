@@ -19,7 +19,7 @@
 
 #include "global.h"
 
-#include "WorldObjs.h"
+#include "HittableList.h"
 
 
 //tmp
@@ -34,6 +34,7 @@
 #include "Metal.h"
 #include "Dielectric.h"
 
+#include "BVH.h"
 
 #include <iostream>
 
@@ -46,11 +47,12 @@ glm::dvec3 calc_ray_color( const Ray &r_, int boundN_ );
 
 
 // all spheres in screne
-std::vector<std::unique_ptr<Sphere>> spheres {};
-std::vector<std::unique_ptr<MovingSphere>> movingSpheres {};// tmp
 std::vector<std::unique_ptr<IMaterial>> matPtrs {};
 
-WorldObjs worldObjs {};
+HittableList worldObjs {};
+BVH_Node     *bvhPtr {nullptr}; 
+
+HittableList worldObjs2 {}; // test
 
 
 void create_scene_1();
@@ -70,19 +72,23 @@ int main( int argc, char* argv[] ){
     //==========================================//
     //               test
     //------------------------------------------//
-    //...
+    //...    
+    //return 0;
+    
 
     // switch the random seed
-    for( int i=0; i<27; i++ ){
+    
+    for( int i=0; i<15; i++ ){
         double d = tprMath::get_random_double();
     }
+    
 
     //==========================================//
     //             mats, objs
     //------------------------------------------//
 
     //----- camera -----//
-    glm::dvec3 lookfrom { 13.0, 5.0, 3.0 };
+    glm::dvec3 lookfrom { 13.0, 2.0, 3.0 };
     glm::dvec3 lookat   { 0.0, 0.0, 0.0 };
     glm::dvec3 worldup  { 0.0, 1.0, 0.0 };
     //double dist_to_focus = glm::length( lookat - lookfrom );
@@ -107,14 +113,15 @@ int main( int argc, char* argv[] ){
     create_scene_3();
 
 
-
     // worldObjs 
-    for( auto &sphereUPtr : spheres ){
+    /*
+    for( auto &sphereUPtr : Sphere::get_sphereUPtrs() ){
         worldObjs.add( sphereUPtr.get() );
     }
-    for( auto &sphereUPtr : movingSpheres ){
+    for( auto &sphereUPtr : MovingSphere::get_movingSphereUPtrs() ){
         worldObjs.add( sphereUPtr.get() );
     }
+    */
     
 
 
@@ -199,9 +206,13 @@ glm::dvec3 calc_ray_color( const Ray &r_, int boundN_ ){
     if(boundN_==0){ return glm::dvec3{ 0.0, 0.0, 0.0 }; }// no light return
 
     //--- render the spheres ---//
-    auto hitRecord = worldObjs.hit( r_, 0.001, tprMath::infinity );
-    if( hitRecord.has_value() ){
-        HitRecord &hret = hitRecord.value();
+    HitRecord hret {};
+
+    //if( worldObjs.hit( r_, 0.001, tprMath::infinity, hret ) ){
+    if( bvhPtr->hit( r_, 0.001, tprMath::infinity, hret ) ){
+    //if( worldObjs2.hit( r_, 0.001, tprMath::infinity, hret ) ){
+
+        //debug::log( "pix hit" );
 
         Ray rScattered {};
         glm::dvec3 attenuation {};
@@ -255,19 +266,18 @@ void create_scene_1(){
 
     //----- objs -----//
     // ground sphere
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0, mat_lambt_ground ) );
+    Sphere::factory( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0, mat_lambt_ground );
 
     // center
-    //spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5, mat_lambt_midblue ) );
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5, mat_metal_silver ) );
+    Sphere::factory( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5, mat_metal_silver );
 
     // left
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, 0.5, mat_diel_diamond ) );
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, -0.45, mat_diel_diamond ) );
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, 0.3, mat_metal_gold ) );
+    Sphere::factory( glm::dvec3{-1.0, 0.0, -1.0 }, 0.5, mat_diel_diamond );
+    Sphere::factory( glm::dvec3{-1.0, 0.0, -1.0 }, -0.45, mat_diel_diamond );
+    Sphere::factory( glm::dvec3{-1.0, 0.0, -1.0 }, 0.3, mat_metal_gold );
     
     // right
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 1.0, 0.0, -1.0 }, 0.5, mat_metal_gold ) );
+    Sphere::factory( glm::dvec3{ 1.0, 0.0, -1.0 }, 0.5, mat_metal_gold );
 
 }
 
@@ -290,21 +300,21 @@ void create_scene_2(){
 
     //----- objs -----//
     // ground sphere
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0, mat_lambt_ground ) );
+    Sphere::factory( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0, mat_lambt_ground );
 
     // center
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5, mat_diel_diamond ) );
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, -0.45, mat_diel_diamond ) );
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.3, mat_metal_gold ) );
+    Sphere::factory( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5, mat_diel_diamond );
+    Sphere::factory( glm::dvec3{ 0.0, 0.0, -1.0 }, -0.45, mat_diel_diamond );
+    Sphere::factory( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.3, mat_metal_gold );
 
 
     // left
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, 0.5, mat_diel_glass ) );
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, -0.45, mat_diel_glass ) );
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, 0.35, mat_lambt_midblue ) );
+    Sphere::factory( glm::dvec3{-1.0, 0.0, -1.0 }, 0.5, mat_diel_glass );
+    Sphere::factory( glm::dvec3{-1.0, 0.0, -1.0 }, -0.45, mat_diel_glass );
+    Sphere::factory( glm::dvec3{-1.0, 0.0, -1.0 }, 0.35, mat_lambt_midblue );
 
     // right
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 1.0, 0.0, -1.0 }, 0.5, mat_metal_silver ) );
+    Sphere::factory( glm::dvec3{ 1.0, 0.0, -1.0 }, 0.5, mat_metal_silver );
 
 
 
@@ -324,9 +334,14 @@ void create_scene_3(){
     };
 
     //----- ground -----//
-    //IMaterial *mat_lambt_ground = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.5, 0.5, 0.5 } ) );
-    IMaterial *mat_lambt_ground = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.75, 0.7, 0.3 } ) );
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, -1000.0, 0.0 }, 1000.0, mat_lambt_ground ) );
+    IMaterial *mat_lambt_ground = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.5, 0.5, 0.5 } ) );
+    //IMaterial *mat_lambt_ground = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.75, 0.7, 0.3 } ) );
+    /*
+    worldObjs.add(
+        //Sphere::factory( glm::dvec3{ 0.0, -1000.0, 0.0 }, 1000.0, mat_lambt_ground )
+        Sphere::factory( glm::dvec3{ 0.0, -1000.0, 0.0 }, 1000.0, mat_lambt_ground )
+    );
+    */
 
     //--- many sml balls ---//
     for( int a=-11; a<11; a++ ){
@@ -350,21 +365,28 @@ void create_scene_3(){
                         tprMath::get_random_double( 0.0, 0.5 ),
                         0.0
                     };
+                    worldObjs.add(
+                        MovingSphere::factory( center, center2, 0.0, 1.0, 0.2, mat )
+                    );
 
-                    movingSpheres.push_back( std::make_unique<MovingSphere>( center, center2, 0.0, 1.0, 0.2, mat ) );
 
                 }else if( choose_mat < 0.9 ){
                     // metal
                     glm::dvec3 albedo = get_random_color( 0.5, 1.0 );
                     double fuzz = tprMath::get_random_double( 0.0, 0.5 );
                     IMaterial *mat = create_mat( std::make_unique<Metal>( albedo, fuzz ) );
-                    spheres.push_back( std::make_unique<Sphere>( center, 0.2, mat ) );
+                    worldObjs.add(
+                        Sphere::factory( center, 0.2, mat )
+                    );
 
                 }else{
                     // glass
                     double refractIndex = tprMath::get_random_double( 1.5, 2.4 );
                     IMaterial *mat = create_mat( std::make_unique<Dielectric>( refractIndex ) );
-                    spheres.push_back( std::make_unique<Sphere>( center, 0.2, mat ) );
+                    worldObjs.add(
+                        Sphere::factory( center, 0.2, mat )
+                    );
+
                 }
             }
         }
@@ -381,15 +403,25 @@ void create_scene_3(){
 
     //----- objs -----//
     // center
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 0.0, 1.0, 0.0 }, 1.0, mat_diel_glass ) );
-
+    worldObjs.add(
+        Sphere::factory( glm::dvec3{ 0.0, 1.0, 0.0 }, 1.0, mat_diel_glass )
+    );
     // left
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{-4.0, 1.0, 0.0 }, 1.0, mat_lambt_1 ) );
-
+    worldObjs.add(
+        Sphere::factory( glm::dvec3{-4.0, 1.0, 0.0 }, 1.0, mat_lambt_1 )
+    );
     // right
-    spheres.push_back( std::make_unique<Sphere>( glm::dvec3{ 4.0, 1.0, 0.0 }, 1.0, mat_metal_1 ) );
+    worldObjs.add(
+        Sphere::factory( glm::dvec3{ 4.0, 1.0, 0.0 }, 1.0, mat_metal_1 )
+    );
 
 
+    // 非常神奇的部分...
+    bvhPtr = BVH_Node::factory( worldObjs, 0.0, 1.0 );
+
+    bvhPtr->print();
+
+    worldObjs2.add( bvhPtr );
 
 }
 

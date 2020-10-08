@@ -24,6 +24,12 @@ namespace tprMath_inn {//----------- namespace: tprMath_inn ----------------//
 
 
 
+int get_random_int( int min_, int max_ ){
+    std::uniform_int_distribution<int> uDist( min_, max_ );
+    return uDist( tprMath_inn::generator );
+}
+
+
 double get_random_double(){
     return tprMath_inn::uDist_double_01( tprMath_inn::generator );
 }

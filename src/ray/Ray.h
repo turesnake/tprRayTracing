@@ -26,8 +26,8 @@ public:
         time(time_)
         {}
 
-    glm::dvec3  get_origin()const{ return this->origin; }
-    glm::dvec3  get_dir()const{ return this->dir; }
+    const glm::dvec3 get_origin()const{ return this->origin; }
+    const glm::dvec3 get_dir()const{ return this->dir; }
     double      get_time()const{ return this->time; }
 
     glm::dvec3 at( double t )const{

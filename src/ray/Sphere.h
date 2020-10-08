@@ -23,15 +23,20 @@
 
 class Sphere : public IHittable{
 public:
+    static Sphere *factory(  const glm::dvec3 &center_, 
+                            double radius_, 
+                            IMaterial *matPtr_ 
+    ){
+        Sphere::sphereUPtrs.emplace_back( std::move(
+            new Sphere( center_,radius_,matPtr_ )
+        ));
+        return Sphere::sphereUPtrs.back().get();
+    }  
 
-    Sphere( const glm::dvec3 &center_, 
-            double radius_, 
-            IMaterial *matPtr_ 
-        ):
-        center(center_),
-        radius(radius_),
-        matPtr(matPtr_)
-        {}
+    static std::vector<std::unique_ptr<Sphere>> &get_sphereUPtrs(){
+        return Sphere::sphereUPtrs;
+    }
+
 
     const glm::dvec3 get_center()const{ return this->center; }
     double get_radius()const{ return this->radius; }
@@ -79,18 +84,36 @@ public:
         }
     }
 
+    bool bounding_box( double t0_, double t1_, AABB &output_aabb_ )const override{
+        glm::dvec3 rv { this->radius, this->radius, this->radius };
+        output_aabb_ = AABB{
+            this->center - rv,
+            this->center + rv,
+        };
+        return true;
+    }
 
+     
 private:
+
+    Sphere( const glm::dvec3 &center_, 
+            double radius_, 
+            IMaterial *matPtr_ 
+        ):
+        center(center_),
+        radius(radius_),
+        matPtr(matPtr_)
+        {}
+
     glm::dvec3 center {};
     double     radius {}; // can be negative
     IMaterial  *matPtr {};
+
+    static std::vector<std::unique_ptr<Sphere>> sphereUPtrs;
+
 };
 
-
-
-
-
-
+inline std::vector<std::unique_ptr<Sphere>> Sphere::sphereUPtrs {};
 
 
 #endif 
