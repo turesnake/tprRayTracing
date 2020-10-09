@@ -14,7 +14,6 @@
 #include "SysConfig.h" // 此文件由 cmake 自己生成，并不在 src/ 目录中
 #include "prepare.h"
 
-
 #include "write_2_png.h"
 
 #include "global.h"
@@ -34,6 +33,8 @@
 #include "Metal.h"
 #include "Dielectric.h"
 
+#include "Texture.h"
+
 #include "BVH.h"
 
 #include <iostream>
@@ -51,8 +52,6 @@ std::vector<std::unique_ptr<IMaterial>> matPtrs {};
 
 HittableList worldObjs {};
 BVH_Node     *bvhPtr {nullptr}; 
-
-HittableList worldObjs2 {}; // test
 
 
 void create_scene_1();
@@ -77,8 +76,7 @@ int main( int argc, char* argv[] ){
     
 
     // switch the random seed
-    
-    for( int i=0; i<15; i++ ){
+    for( int i=0; i<7; i++ ){
         double d = tprMath::get_random_double();
     }
     
@@ -131,6 +129,8 @@ int main( int argc, char* argv[] ){
     std::vector<RGBA> pngData ( IMAGE_W<> * IMAGE_H<>, RGBA{ 255, 0, 0, 255 } );
 
     debug::log("Start Rendering:");
+    clock_t time1 = clock();
+
     for( int h=0; h<IMAGE_H<>; h++ ){// bottom -> top
         std::cout<<"."<<std::flush;// progress indicator
         for( int w=0; w<IMAGE_W<>; w++ ){// left -> right
@@ -158,7 +158,11 @@ int main( int argc, char* argv[] ){
     }
     std::cout<<std::endl;
 
-    
+    clock_t time2 = clock();
+    double timeoff = static_cast<double>(time2-time1) / 
+                     static_cast<double>(CLOCKS_PER_SEC);
+    debug::log( "\ntime chekc:\n   t1: {}, t2: {}; timeoff:{}", time1, time2, timeoff  );
+
 
     //==========================================//
     //           write 2 png file
@@ -210,9 +214,6 @@ glm::dvec3 calc_ray_color( const Ray &r_, int boundN_ ){
 
     //if( worldObjs.hit( r_, 0.001, tprMath::infinity, hret ) ){
     if( bvhPtr->hit( r_, 0.001, tprMath::infinity, hret ) ){
-    //if( worldObjs2.hit( r_, 0.001, tprMath::infinity, hret ) ){
-
-        //debug::log( "pix hit" );
 
         Ray rScattered {};
         glm::dvec3 attenuation {};
@@ -336,12 +337,18 @@ void create_scene_3(){
     //----- ground -----//
     IMaterial *mat_lambt_ground = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.5, 0.5, 0.5 } ) );
     //IMaterial *mat_lambt_ground = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.75, 0.7, 0.3 } ) );
-    /*
+
+    IMaterial *mat_lambt_checker_ground = create_mat( std::make_unique<Lambertian>(  
+        std::make_shared<CheckerTexture>(  
+            glm::dvec3{ 0.2, 0.3, 0.1 },
+            glm::dvec3{ 0.9, 0.9, 0.9 }
+        )
+    ));
+    
     worldObjs.add(
-        //Sphere::factory( glm::dvec3{ 0.0, -1000.0, 0.0 }, 1000.0, mat_lambt_ground )
-        Sphere::factory( glm::dvec3{ 0.0, -1000.0, 0.0 }, 1000.0, mat_lambt_ground )
+        Sphere::factory( glm::dvec3{ 0.0, -1000.0, 0.0 }, 1000.0, mat_lambt_checker_ground )
     );
-    */
+    
 
     //--- many sml balls ---//
     for( int a=-11; a<11; a++ ){
@@ -416,13 +423,9 @@ void create_scene_3(){
     );
 
 
-    // 非常神奇的部分...
+    //--- bvh 分区 ---//
     bvhPtr = BVH_Node::factory( worldObjs, 0.0, 1.0 );
-
-    bvhPtr->print();
-
-    worldObjs2.add( bvhPtr );
-
+    //bvhPtr->print();
 }
 
 

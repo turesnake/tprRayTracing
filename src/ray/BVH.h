@@ -38,8 +38,6 @@ public:
                                 double time1_,
                                 int    axis_
                                 ){
-        
-        //debug::log( "beg:{},end{}", begin_, end_ );
 
         BVH_Node::nodeUPtrs.emplace_back( std::move( new BVH_Node() ));
         BVH_Node *node = BVH_Node::nodeUPtrs.back().get();
@@ -48,10 +46,13 @@ public:
         //--- fanctor ---
         // random comparator
         //int axis = tprMath::get_random_int( 0, 2 );
-        //debug::log( "axis:{}", axis );
         auto comparator =   ((axis_%3)==0) ? aabb_x_compare :
                             ((axis_%3)==1) ? aabb_y_compare :
                                         aabb_z_compare;
+            // 测试表明，使用交替的 axis，要比 随机值 性能更好
+            // 随机值：177 单位时间
+            // 交替值：150 单位时间
+
         //--- left, right ---
         size_t span = end_ - begin_;
         if( span == 1 ){

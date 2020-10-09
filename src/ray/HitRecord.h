@@ -20,6 +20,8 @@ public:
     glm::dvec3 point  {};
     glm::dvec3 normal {};
     double     t {};
+    double     u {};//texture
+    double     v {};//texture
     bool       is_front_face {};
     IMaterial  *matPtr {};
 

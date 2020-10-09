@@ -18,7 +18,11 @@
 #include "HitRecord.h"
 
 
-#include <iostream>
+//#include <iostream>
+
+#include "Sphere.h"
+
+
 
 
 class MovingSphere : public IHittable{

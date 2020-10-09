@@ -18,7 +18,19 @@
 #include "HitRecord.h"
 
 
-#include <iostream>
+//#include <iostream>
+
+
+// 这个函数的 解释，书本好像存在问题 ...
+inline void get_sphere_uv( const glm::dvec3 &pos_, double &out_u_, double &out_v_ ){
+    double phi   = atan2( pos_.z, pos_.x ); // radian [ -pi,   pi ]
+    double theta = asin( pos_.y );          // radian [ -pi/2, pi/2 ]
+        // 为什么不是 acos(y) ???
+        // 书上 关于 球坐标 的描述，存在问题
+    out_u_ = 1.0 - (phi + tprMath::pi)/(2.0 * tprMath::pi); 
+    out_v_ = ( theta + tprMath::pi*0.5 ) / tprMath::pi;
+}
+
 
 
 class Sphere : public IHittable{
@@ -73,8 +85,13 @@ public:
             record_.point = r_.at(t);
 
             glm::dvec3 normDir = glm::normalize( record_.point - this->center );
-            record_.set_face_normal( r_, this->radius>0.0 ? normDir : -normDir );
-                    // trick: if the radius is negative, we can build a inn-sphere (i.e. glass-ball)
+            if( this->radius < 0.0 ){
+                normDir = -normDir;
+            }
+                // trick: if the radius is negative, we can build a inn-sphere (i.e. glass-ball)
+
+            record_.set_face_normal( r_, normDir );
+            get_sphere_uv( normDir, record_.u, record_.v );
             record_.matPtr = this->matPtr;
 
             return true;
@@ -114,6 +131,14 @@ private:
 };
 
 inline std::vector<std::unique_ptr<Sphere>> Sphere::sphereUPtrs {};
+
+
+
+
+
+
+
+
 
 
 #endif 
