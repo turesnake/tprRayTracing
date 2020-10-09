@@ -18,9 +18,6 @@
 #include "HitRecord.h"
 
 
-//#include <iostream>
-
-
 // 这个函数的 解释，书本好像存在问题 ...
 inline void get_sphere_uv( const glm::dvec3 &pos_, double &out_u_, double &out_v_ ){
     double phi   = atan2( pos_.z, pos_.x ); // radian [ -pi,   pi ]
@@ -35,20 +32,16 @@ inline void get_sphere_uv( const glm::dvec3 &pos_, double &out_u_, double &out_v
 
 class Sphere : public IHittable{
 public:
-    static Sphere *factory(  const glm::dvec3 &center_, 
-                            double radius_, 
-                            IMaterial *matPtr_ 
-    ){
-        Sphere::sphereUPtrs.emplace_back( std::move(
-            new Sphere( center_,radius_,matPtr_ )
-        ));
-        return Sphere::sphereUPtrs.back().get();
-    }  
+    Sphere()=default;
 
-    static std::vector<std::unique_ptr<Sphere>> &get_sphereUPtrs(){
-        return Sphere::sphereUPtrs;
-    }
-
+    Sphere( const glm::dvec3 &center_, 
+            double radius_, 
+            std::shared_ptr<IMaterial> matSPtr_ 
+        ):
+        center(center_),
+        radius(radius_),
+        matSPtr(matSPtr_)
+        {}
 
     const glm::dvec3 get_center()const{ return this->center; }
     double get_radius()const{ return this->radius; }
@@ -92,7 +85,7 @@ public:
 
             record_.set_face_normal( r_, normDir );
             get_sphere_uv( normDir, record_.u, record_.v );
-            record_.matPtr = this->matPtr;
+            record_.matSPtr = this->matSPtr;
 
             return true;
 
@@ -112,31 +105,10 @@ public:
 
      
 private:
-
-    Sphere( const glm::dvec3 &center_, 
-            double radius_, 
-            IMaterial *matPtr_ 
-        ):
-        center(center_),
-        radius(radius_),
-        matPtr(matPtr_)
-        {}
-
     glm::dvec3 center {};
     double     radius {}; // can be negative
-    IMaterial  *matPtr {};
-
-    static std::vector<std::unique_ptr<Sphere>> sphereUPtrs;
-
+    std::shared_ptr<IMaterial> matSPtr {};
 };
-
-inline std::vector<std::unique_ptr<Sphere>> Sphere::sphereUPtrs {};
-
-
-
-
-
-
 
 
 

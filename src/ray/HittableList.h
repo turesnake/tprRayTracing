@@ -23,12 +23,12 @@ class HittableList : public IHittable{
 public:
     HittableList()=default;
 
-    void add( IHittable *objPtr_ ){
-        this->objPtrs.push_back( objPtr_ );
+    void add( std::shared_ptr<IHittable> sptr_ ){
+        this->objSPtrs.push_back( sptr_ );
     }
 
-    std::vector<IHittable*> &get_objPtrs(){
-        return this->objPtrs;
+    std::vector<std::shared_ptr<IHittable>> &get_objSPtrs(){
+        return this->objSPtrs;
     }
 
 
@@ -40,8 +40,8 @@ public:
         bool      isHit {false};
         double    closest_tmax {tmax_};// 步步缩小
 
-        for( auto objPtr : this->objPtrs ){
-            if( objPtr->hit( r_, tmin_, closest_tmax, tmpHRet ) ){
+        for( auto objSPtr : this->objSPtrs ){
+            if( objSPtr->hit( r_, tmin_, closest_tmax, tmpHRet ) ){
                 isHit = true;
                 closest_tmax = tmpHRet.t;
                 record_ = tmpHRet; // copy
@@ -52,13 +52,13 @@ public:
 
     // bound all objs to a aabb box
     bool bounding_box( double t0_, double t1_, AABB &output_aabb_ )const override{
-        if( this->objPtrs.empty() ){ return false; }
+        if( this->objSPtrs.empty() ){ return false; }
 
         AABB tmp_aabb {};
         bool isFstAABB {true};
 
-        for( auto objPtr : this->objPtrs ){
-            if( !objPtr->bounding_box( t0_,t1_,tmp_aabb ) ){
+        for( auto objSPtr : this->objSPtrs ){
+            if( !objSPtr->bounding_box( t0_,t1_,tmp_aabb ) ){
                 return false;
             }
             if( isFstAABB ){
@@ -73,7 +73,7 @@ public:
 
 private:
 
-    std::vector<IHittable*> objPtrs {};
+    std::vector<std::shared_ptr<IHittable>> objSPtrs {};
 
 };
 

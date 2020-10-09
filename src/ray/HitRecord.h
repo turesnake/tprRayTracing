@@ -23,7 +23,7 @@ public:
     double     u {};//texture
     double     v {};//texture
     bool       is_front_face {};
-    IMaterial  *matPtr {};
+    std::shared_ptr<IMaterial>  matSPtr {};
 
 
     void set_face_normal( const Ray &r_, const glm::dvec3 &outward_normal_ ){

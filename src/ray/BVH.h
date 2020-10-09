@@ -19,29 +19,26 @@
 
 class BVH_Node : public IHittable{
 public:
+
+    BVH_Node()=default;
     
-    static BVH_Node *factory( HittableList &hlist_, double time0_, double time1_ ){
-        std::vector<IHittable*> &objPtrs = hlist_.get_objPtrs();
-        return BVH_Node::factory(   objPtrs, 
-                                    0,
-                                    objPtrs.size(),
-                                    time0_,
-                                    time1_,
-                                    0
-                                    );
-    }
+    BVH_Node( HittableList &hlist_, double time0_, double time1_ ):
+        BVH_Node(   hlist_.get_objSPtrs(),
+                    0,
+                    hlist_.get_objSPtrs().size(),
+                    time0_,
+                    time1_,
+                    0
+                )
+                {}
 
-    static BVH_Node *factory(  std::vector<IHittable*> &objs_,
-                                size_t begin_,
-                                size_t end_, // not include
-                                double time0_, 
-                                double time1_,
-                                int    axis_
-                                ){
-
-        BVH_Node::nodeUPtrs.emplace_back( std::move( new BVH_Node() ));
-        BVH_Node *node = BVH_Node::nodeUPtrs.back().get();
-        //-----//
+    BVH_Node(   std::vector<std::shared_ptr<IHittable>> &objs_,
+                size_t begin_,
+                size_t end_, // not include
+                double time0_, 
+                double time1_,
+                int    axis_
+                ){
 
         //--- fanctor ---
         // random comparator
@@ -57,19 +54,19 @@ public:
         size_t span = end_ - begin_;
         if( span == 1 ){
             // both child have the same obj
-            node->left = objs_.at(begin_);
-            node->right = objs_.at(begin_);
+            this->left = objs_.at(begin_);
+            this->right = objs_.at(begin_);
 
         }else if( span == 2 ){
             // one side, one obj
-            IHittable *a = objs_.at(begin_);
-            IHittable *b = objs_.at(begin_+1);
+            std::shared_ptr<IHittable> a = objs_.at(begin_);
+            std::shared_ptr<IHittable> b = objs_.at(begin_+1);
             if( comparator( a, b ) ){
-                node->left = a;
-                node->right = b;
+                this->left = a;
+                this->right = b;
             }else{
-                node->left = b;
-                node->right = a;
+                this->left = b;
+                this->right = a;
             }
 
         }else{
@@ -78,20 +75,18 @@ public:
                         comparator );
 
             size_t mid = begin_ + span/2;
-            node->left  = BVH_Node::factory( objs_, begin_, mid, time0_, time1_, axis_+1 );
-            node->right = BVH_Node::factory( objs_, mid,    end_,time0_, time1_, axis_+1 );
+            this->left  = std::make_shared<BVH_Node>( objs_, begin_, mid, time0_, time1_, axis_+1 );
+            this->right = std::make_shared<BVH_Node>( objs_, mid,    end_,time0_, time1_, axis_+1 );
         }
 
         //--- aabb ---//
         AABB boxL {};
         AABB boxR {};
-        bool retL = node->left->bounding_box( time0_, time1_, boxL );
-        bool retR = node->right->bounding_box( time0_, time1_, boxR );
+        bool retL = this->left->bounding_box( time0_, time1_, boxL );
+        bool retR = this->right->bounding_box( time0_, time1_, boxR );
             tprAssert( retL && retR );
-        node->aabb = AABB::surrounding_box( boxL, boxR );
+        this->aabb = AABB::surrounding_box( boxL, boxR );
 
-        //-----//
-        return node;
     }
 
     void print()const{
@@ -124,19 +119,10 @@ public:
 
 private:
 
-    BVH_Node()=default;
-
-    IHittable *left  {nullptr};
-    IHittable *right {nullptr};
+    std::shared_ptr<IHittable> left  {nullptr};
+    std::shared_ptr<IHittable> right {nullptr};
     AABB  aabb {};
-
-    static std::vector<std::unique_ptr<BVH_Node>> nodeUPtrs;
-
 };
-
-
-std::vector<std::unique_ptr<BVH_Node>> BVH_Node::nodeUPtrs {};
-
 
 
 #endif 

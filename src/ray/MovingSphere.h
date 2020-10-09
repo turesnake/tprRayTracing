@@ -18,8 +18,6 @@
 #include "HitRecord.h"
 
 
-//#include <iostream>
-
 #include "Sphere.h"
 
 
@@ -27,22 +25,21 @@
 
 class MovingSphere : public IHittable{
 public:
-    static MovingSphere *factory(const glm::dvec3 &center0_, 
-                                const glm::dvec3 &center1_,
-                                double time0_,
-                                double time1_,
-                                double radius_, 
-                                IMaterial *matPtr_ 
-    ){
-        MovingSphere::movingSphereUPtrs.emplace_back( std::move(
-            new MovingSphere( center0_, center1_, time0_, time1_, radius_, matPtr_ )
-        ));
-        return MovingSphere::movingSphereUPtrs.back().get();
-    }
 
-    static std::vector<std::unique_ptr<MovingSphere>> &get_movingSphereUPtrs(){
-        return MovingSphere::movingSphereUPtrs;
-    }
+    MovingSphere(   const glm::dvec3 &center0_, 
+                    const glm::dvec3 &center1_,
+                    double time0_,
+                    double time1_,
+                    double radius_, 
+                    std::shared_ptr<IMaterial> matSPtr_ 
+        ):
+        center0(center0_),
+        center1(center1_),
+        time0(time0_),
+        time1(time1_),
+        radius(radius_),
+        matSPtr(matSPtr_)
+        {}
 
     const glm::dvec3 get_center( double t_ )const{ 
         glm::dvec3 off = center1 - center0;
@@ -87,7 +84,7 @@ public:
             glm::dvec3 normDir = glm::normalize( record_.point - currentCenter );
             record_.set_face_normal( r_, this->radius>0.0 ? normDir : -normDir );
                     // trick: if the radius is negative, we can build a inn-sphere (i.e. glass-ball)
-            record_.matPtr = this->matPtr;
+            record_.matSPtr = this->matSPtr;
 
             return true;
 
@@ -113,20 +110,7 @@ public:
 
 
 private:
-    MovingSphere(   const glm::dvec3 &center0_, 
-                    const glm::dvec3 &center1_,
-                    double time0_,
-                    double time1_,
-                    double radius_, 
-                    IMaterial *matPtr_ 
-        ):
-        center0(center0_),
-        center1(center1_),
-        time0(time0_),
-        time1(time1_),
-        radius(radius_),
-        matPtr(matPtr_)
-        {}
+    
 
     glm::dvec3 center0 {};
     glm::dvec3 center1 {};
@@ -135,13 +119,8 @@ private:
     double time1 {};
 
     double     radius {}; // can be negative
-    IMaterial  *matPtr {};
-
-    static std::vector<std::unique_ptr<MovingSphere>> movingSphereUPtrs;
-    
+    std::shared_ptr<IMaterial>  matSPtr {};
 };
-
-inline std::vector<std::unique_ptr<MovingSphere>> MovingSphere::movingSphereUPtrs {};
 
 
 #endif 

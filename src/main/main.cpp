@@ -47,11 +47,10 @@ glm::dvec3 calc_ray_color( const Ray &r_, int boundN_ );
 
 
 
-// all spheres in screne
-std::vector<std::unique_ptr<IMaterial>> matPtrs {};
+//--- all spheres in screne ---
 
-HittableList worldObjs {};
-BVH_Node     *bvhPtr {nullptr}; 
+std::shared_ptr<BVH_Node> bvhSPtr {nullptr}; 
+
 
 
 void create_scene_1();
@@ -110,17 +109,6 @@ int main( int argc, char* argv[] ){
     //create_scene_2();
     create_scene_3();
 
-
-    // worldObjs 
-    /*
-    for( auto &sphereUPtr : Sphere::get_sphereUPtrs() ){
-        worldObjs.add( sphereUPtr.get() );
-    }
-    for( auto &sphereUPtr : MovingSphere::get_movingSphereUPtrs() ){
-        worldObjs.add( sphereUPtr.get() );
-    }
-    */
-    
 
 
     //==========================================//
@@ -212,13 +200,12 @@ glm::dvec3 calc_ray_color( const Ray &r_, int boundN_ ){
     //--- render the spheres ---//
     HitRecord hret {};
 
-    //if( worldObjs.hit( r_, 0.001, tprMath::infinity, hret ) ){
-    if( bvhPtr->hit( r_, 0.001, tprMath::infinity, hret ) ){
+    if( bvhSPtr->hit( r_, 0.001, tprMath::infinity, hret ) ){
 
         Ray rScattered {};
         glm::dvec3 attenuation {};
 
-        if( hret.matPtr->scatter(r_, hret, attenuation, rScattered) ){
+        if( hret.matSPtr->scatter(r_, hret, attenuation, rScattered) ){
             return attenuation * calc_ray_color( rScattered, boundN_-1 );// recursive
         }else{
             return glm::dvec3{ 1.0, 0.0, 0.0 };
@@ -241,89 +228,87 @@ glm::dvec3 calc_ray_color( const Ray &r_, int boundN_ ){
 
 
 
-
-IMaterial *create_mat( std::unique_ptr<IMaterial> uptr ){
-    matPtrs.push_back( std::move( uptr ) );
-    return matPtrs.back().get();
-}
-
-
 void create_scene_1(){
 
+    HittableList scene {};
+
     //----- mats -----//
-    IMaterial *mat_lambt_ground = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.8, 0.8, 0.0 } ) );
-    //IMaterial *mat_lambt_ground = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.4, 0.5, 0.6 } ) );
+    auto mat_lambt_ground = std::make_shared<Lambertian>( glm::dvec3{ 0.8, 0.8, 0.0 } );
+    auto mat_lambt_egg    = std::make_shared<Lambertian>( glm::dvec3{ 0.7, 0.3, 0.3 } );
+    auto mat_lambt_midblue = std::make_shared<Lambertian>( glm::dvec3{ 0.1, 0.2, 0.5 } );
 
-    IMaterial *mat_lambt_egg     = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.7, 0.3, 0.3 } ) );
-    IMaterial *mat_lambt_midblue = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.1, 0.2, 0.5 } ) );
+    auto mat_metal_silver = std::make_shared<Metal>( glm::dvec3{ 0.8, 0.8, 0.8 }, 0.0 );
+    auto mat_metal_gold_fuzz = std::make_shared<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 1.0 );
+    auto mat_metal_gold = std::make_shared<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 0.0 );
 
-    IMaterial *mat_metal_silver = create_mat( std::make_unique<Metal>( glm::dvec3{ 0.8, 0.8, 0.8 }, 0.0 ) );
-    IMaterial *mat_metal_gold_fuzz = create_mat( std::make_unique<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 1.0 ) );
-    IMaterial *mat_metal_gold = create_mat( std::make_unique<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 0.0 ) );
-
-    IMaterial *mat_diel_glass = create_mat( std::make_unique<Dielectric>( 1.5 ) );
-    IMaterial *mat_diel_diamond = create_mat( std::make_unique<Dielectric>( 2.4 ) );
+    auto mat_diel_glass = std::make_shared<Dielectric>( 1.5 );
+    auto mat_diel_diamond = std::make_shared<Dielectric>( 2.4 );
 
 
     //----- objs -----//
     // ground sphere
-    Sphere::factory( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0, mat_lambt_ground );
+    scene.add( std::make_shared<Sphere>( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0, mat_lambt_ground ) );
 
     // center
-    Sphere::factory( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5, mat_metal_silver );
+    scene.add( std::make_shared<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5, mat_metal_silver ));
 
     // left
-    Sphere::factory( glm::dvec3{-1.0, 0.0, -1.0 }, 0.5, mat_diel_diamond );
-    Sphere::factory( glm::dvec3{-1.0, 0.0, -1.0 }, -0.45, mat_diel_diamond );
-    Sphere::factory( glm::dvec3{-1.0, 0.0, -1.0 }, 0.3, mat_metal_gold );
+    scene.add( std::make_shared<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, 0.5, mat_diel_diamond ));
+    scene.add( std::make_shared<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, -0.45, mat_diel_diamond ));
+    scene.add( std::make_shared<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, 0.3, mat_metal_gold ));
     
     // right
-    Sphere::factory( glm::dvec3{ 1.0, 0.0, -1.0 }, 0.5, mat_metal_gold );
+    scene.add( std::make_shared<Sphere>( glm::dvec3{ 1.0, 0.0, -1.0 }, 0.5, mat_metal_gold ));
 
+    //-----//
+    bvhSPtr = std::make_shared<BVH_Node>( scene, 0.0, 1.0 );
 }
+
 
 
 void create_scene_2(){
 
+    HittableList scene {};
+
     //----- mats -----//
-    IMaterial *mat_lambt_ground = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.8, 0.8, 0.0 } ) );
+    auto mat_lambt_ground = std::make_shared<Lambertian>( glm::dvec3{ 0.8, 0.8, 0.0 } );
+    auto mat_lambt_egg    = std::make_shared<Lambertian>( glm::dvec3{ 0.7, 0.3, 0.3 } );
+    auto mat_lambt_midblue = std::make_shared<Lambertian>( glm::dvec3{ 0.1, 0.2, 0.5 } );
 
-    IMaterial *mat_lambt_egg     = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.7, 0.3, 0.3 } ) );
-    IMaterial *mat_lambt_midblue = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.1, 0.2, 0.5 } ) );
+    auto mat_metal_silver = std::make_shared<Metal>( glm::dvec3{ 0.8, 0.8, 0.8 }, 0.0 );
+    auto mat_metal_gold_fuzz = std::make_shared<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 1.0 );
+    auto mat_metal_gold = std::make_shared<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 0.0 );
 
-    IMaterial *mat_metal_silver = create_mat( std::make_unique<Metal>( glm::dvec3{ 0.8, 0.8, 0.8 }, 0.3 ) );
-    IMaterial *mat_metal_gold_fuzz = create_mat( std::make_unique<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 1.0 ) );
-    IMaterial *mat_metal_gold = create_mat( std::make_unique<Metal>( glm::dvec3{ 0.8, 0.6, 0.2 }, 0.0 ) );
-
-    IMaterial *mat_diel_glass = create_mat( std::make_unique<Dielectric>( 1.5 ) );
-    IMaterial *mat_diel_diamond = create_mat( std::make_unique<Dielectric>( 2.4 ) );
+    auto mat_diel_glass = std::make_shared<Dielectric>( 1.5 );
+    auto mat_diel_diamond = std::make_shared<Dielectric>( 2.4 );
 
 
     //----- objs -----//
     // ground sphere
-    Sphere::factory( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0, mat_lambt_ground );
+    scene.add( std::make_shared<Sphere>( glm::dvec3{ 0.0, -100.5, -1.0 }, 100.0, mat_lambt_ground ));
 
     // center
-    Sphere::factory( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5, mat_diel_diamond );
-    Sphere::factory( glm::dvec3{ 0.0, 0.0, -1.0 }, -0.45, mat_diel_diamond );
-    Sphere::factory( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.3, mat_metal_gold );
-
+    scene.add( std::make_shared<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.5, mat_diel_diamond ));
+    scene.add( std::make_shared<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, -0.45, mat_diel_diamond ));
+    scene.add( std::make_shared<Sphere>( glm::dvec3{ 0.0, 0.0, -1.0 }, 0.3, mat_metal_gold ));
 
     // left
-    Sphere::factory( glm::dvec3{-1.0, 0.0, -1.0 }, 0.5, mat_diel_glass );
-    Sphere::factory( glm::dvec3{-1.0, 0.0, -1.0 }, -0.45, mat_diel_glass );
-    Sphere::factory( glm::dvec3{-1.0, 0.0, -1.0 }, 0.35, mat_lambt_midblue );
+    scene.add( std::make_shared<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, 0.5, mat_diel_glass ));
+    scene.add( std::make_shared<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, -0.45, mat_diel_glass ));
+    scene.add( std::make_shared<Sphere>( glm::dvec3{-1.0, 0.0, -1.0 }, 0.35, mat_lambt_midblue ));
 
     // right
-    Sphere::factory( glm::dvec3{ 1.0, 0.0, -1.0 }, 0.5, mat_metal_silver );
+    scene.add( std::make_shared<Sphere>( glm::dvec3{ 1.0, 0.0, -1.0 }, 0.5, mat_metal_silver ));
 
-
-
+    //-----//
+    bvhSPtr = std::make_shared<BVH_Node>( scene, 0.0, 1.0 );
 }
 
 
 // last scene in book 《Ray Tracing in One Weekend》
 void create_scene_3(){
+
+    HittableList scene {};
 
     // lambdas
     auto get_random_color = []( double min_=0.0, double max_=1.0 )->glm::dvec3{
@@ -335,20 +320,18 @@ void create_scene_3(){
     };
 
     //----- ground -----//
-    IMaterial *mat_lambt_ground = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.5, 0.5, 0.5 } ) );
-    //IMaterial *mat_lambt_ground = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.75, 0.7, 0.3 } ) );
+    auto mat_lambt_ground = std::make_shared<Lambertian>( glm::dvec3{ 0.5, 0.5, 0.5 } );
 
-    IMaterial *mat_lambt_checker_ground = create_mat( std::make_unique<Lambertian>(  
+    auto mat_lambt_checker_ground = std::make_shared<Lambertian>( 
         std::make_shared<CheckerTexture>(  
             glm::dvec3{ 0.2, 0.3, 0.1 },
             glm::dvec3{ 0.9, 0.9, 0.9 }
         )
-    ));
-    
-    worldObjs.add(
-        Sphere::factory( glm::dvec3{ 0.0, -1000.0, 0.0 }, 1000.0, mat_lambt_checker_ground )
     );
-    
+
+    scene.add( std::make_shared<Sphere>(  
+        glm::dvec3{ 0.0, -1000.0, 0.0 }, 1000.0, mat_lambt_checker_ground
+    ));
 
     //--- many sml balls ---//
     for( int a=-11; a<11; a++ ){
@@ -365,67 +348,65 @@ void create_scene_3(){
                 if( choose_mat < 0.7 ){
                     // diffuse
                     glm::dvec3 albedo = get_random_color();
-                    IMaterial *mat = create_mat( std::make_unique<Lambertian>( albedo ) );
+                    auto mat = std::make_shared<Lambertian>( albedo );
                     
                     glm::dvec3 center2 = center + glm::dvec3{
                         0.0, 
                         tprMath::get_random_double( 0.0, 0.5 ),
                         0.0
                     };
-                    worldObjs.add(
-                        MovingSphere::factory( center, center2, 0.0, 1.0, 0.2, mat )
-                    );
-
+                    scene.add( std::make_shared<MovingSphere>( 
+                        center, center2, 0.0, 1.0, 0.2, mat
+                    ));
 
                 }else if( choose_mat < 0.9 ){
                     // metal
                     glm::dvec3 albedo = get_random_color( 0.5, 1.0 );
                     double fuzz = tprMath::get_random_double( 0.0, 0.5 );
-                    IMaterial *mat = create_mat( std::make_unique<Metal>( albedo, fuzz ) );
-                    worldObjs.add(
-                        Sphere::factory( center, 0.2, mat )
-                    );
+
+                    auto mat = std::make_shared<Metal>( albedo, fuzz );
+                    scene.add( std::make_shared<Sphere>( 
+                        center, 0.2, mat 
+                    ));
 
                 }else{
                     // glass
                     double refractIndex = tprMath::get_random_double( 1.5, 2.4 );
-                    IMaterial *mat = create_mat( std::make_unique<Dielectric>( refractIndex ) );
-                    worldObjs.add(
-                        Sphere::factory( center, 0.2, mat )
-                    );
 
+                    auto mat = std::make_shared<Dielectric>( refractIndex );
+
+                    scene.add( std::make_shared<Sphere>( 
+                        center, 0.2, mat
+                    ));
                 }
             }
         }
     }
 
     //--- oth mats ---//
-    IMaterial *mat_lambt_1 = create_mat( std::make_unique<Lambertian>( glm::dvec3{ 0.4, 0.2, 0.1 } ) );
+    auto mat_lambt_1 = std::make_shared<Lambertian>( glm::dvec3{ 0.4, 0.2, 0.1 } );
 
-    IMaterial *mat_metal_1 = create_mat( std::make_unique<Metal>( glm::dvec3{ 0.7, 0.6, 0.5 }, 0.0 ) );
+    auto mat_metal_1 = std::make_shared<Metal>( glm::dvec3{ 0.7, 0.6, 0.5 }, 0.0 );
 
-    IMaterial *mat_diel_glass = create_mat( std::make_unique<Dielectric>( 1.5 ) );
-    IMaterial *mat_diel_diamond = create_mat( std::make_unique<Dielectric>( 2.4 ) );
-
+    auto mat_diel_glass = std::make_shared<Dielectric>( 1.5 );
+    auto mat_diel_diamond = std::make_shared<Dielectric>( 2.4 );
 
     //----- objs -----//
     // center
-    worldObjs.add(
-        Sphere::factory( glm::dvec3{ 0.0, 1.0, 0.0 }, 1.0, mat_diel_glass )
-    );
+    scene.add( std::make_shared<Sphere>( 
+        glm::dvec3{ 0.0, 1.0, 0.0 }, 1.0, mat_diel_glass
+    ));
     // left
-    worldObjs.add(
-        Sphere::factory( glm::dvec3{-4.0, 1.0, 0.0 }, 1.0, mat_lambt_1 )
-    );
+    scene.add( std::make_shared<Sphere>( 
+        glm::dvec3{-4.0, 1.0, 0.0 }, 1.0, mat_lambt_1
+    ));
     // right
-    worldObjs.add(
-        Sphere::factory( glm::dvec3{ 4.0, 1.0, 0.0 }, 1.0, mat_metal_1 )
-    );
+    scene.add( std::make_shared<Sphere>( 
+        glm::dvec3{ 4.0, 1.0, 0.0 }, 1.0, mat_metal_1
+    ));
 
-
-    //--- bvh 分区 ---//
-    bvhPtr = BVH_Node::factory( worldObjs, 0.0, 1.0 );
-    //bvhPtr->print();
+    //-----//
+    bvhSPtr = std::make_shared<BVH_Node>( scene, 0.0, 1.0 );
 }
 
 
