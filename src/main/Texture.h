@@ -11,6 +11,8 @@
 
 #include "pch.h"
 
+#include "Perlin.h"
+
 
 
 class Texture{
@@ -85,7 +87,28 @@ private:
 
 
 
+class NoiseTexture : public Texture{
+public:
+    NoiseTexture()=default;
+    NoiseTexture( double scale_ ):scale(scale_){}
 
+    glm::dvec3 value( double u_, double v_, const glm::dvec3 &pos_ )const override{
+
+        // regular noise
+        //return glm::dvec3{1.0,1.0,1.0} * 0.5 * (1.0 + this->noise.noise( this->scale * pos_ ));
+
+        // marble-like noise
+        return  glm::dvec3{1.0,1.0,1.0} * 
+                0.5 *
+                ( 1.0 + sin( this->scale*pos_.z + 10.0*noise.turb(pos_)));
+
+    }
+
+private:
+    Perlin noise {};
+    double scale {};
+
+};
 
 
 

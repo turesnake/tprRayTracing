@@ -22,6 +22,7 @@
 inline void get_sphere_uv( const glm::dvec3 &pos_, double &out_u_, double &out_v_ ){
     double phi   = atan2( pos_.z, pos_.x ); // radian [ -pi,   pi ]
     double theta = asin( pos_.y );          // radian [ -pi/2, pi/2 ]
+    //double theta = acos( pos_.y );
         // 为什么不是 acos(y) ???
         // 书上 关于 球坐标 的描述，存在问题
     out_u_ = 1.0 - (phi + tprMath::pi)/(2.0 * tprMath::pi); 

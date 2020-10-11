@@ -56,6 +56,8 @@ std::shared_ptr<BVH_Node> bvhSPtr {nullptr};
 void create_scene_1();
 void create_scene_2();
 void create_scene_3();
+void create_scene_4();
+void create_scene_5();
 
 
 int main( int argc, char* argv[] ){
@@ -76,8 +78,9 @@ int main( int argc, char* argv[] ){
 
     // switch the random seed
     for( int i=0; i<7; i++ ){
-        double d = tprMath::get_random_double();
+        //double d = tprMath::get_random_double();
     }
+    
     
 
     //==========================================//
@@ -85,30 +88,63 @@ int main( int argc, char* argv[] ){
     //------------------------------------------//
 
     //----- camera -----//
-    glm::dvec3 lookfrom { 13.0, 2.0, 3.0 };
-    glm::dvec3 lookat   { 0.0, 0.0, 0.0 };
+    glm::dvec3 lookfrom {};
+    glm::dvec3 lookat   {};
     glm::dvec3 worldup  { 0.0, 1.0, 0.0 };
     //double dist_to_focus = glm::length( lookat - lookfrom );
-    double dist_to_focus = 10.0;
-    double aperture = 0.1;
+    double vfov {};
+    double dist_to_focus {};
+    double aperture {};
+
+
+    switch( 5 ){
+
+        case 3:
+            // last scne in book 1
+            create_scene_3();
+            lookfrom = glm::dvec3{ 13.0, 2.0, 3.0 };
+            lookat = glm::dvec3{ 0.0, 0.0, 0.0 };
+            vfov = 20.0;
+            dist_to_focus = 10.0;
+            aperture = 0.1;
+            break;
+        
+        case 4:
+            // two big spheres with checker-texture
+            create_scene_4();
+            lookfrom = glm::dvec3{ 13.0, 2.0, 3.0 };
+            lookat = glm::dvec3{ 0.0, 0.0, 0.0 };
+            vfov = 20.0;
+            dist_to_focus = 10.0;
+            aperture = 0.1;
+            break;
+
+        case 5:
+            // two perlin spheres (big + sml)
+            create_scene_5();
+            lookfrom = glm::dvec3{ 13.0, 2.0, 3.0 };
+            lookat = glm::dvec3{ 0.0, 0.0, 0.0 };
+            vfov = 20.0;
+            dist_to_focus = glm::length( lookat - lookfrom );
+            aperture = 0.02;
+            break;
+        
+        default:
+            break;
+    }
+
+
 
     Camera camera { lookfrom,
                     lookat,
                     worldup,
-                    20, 
+                    vfov, 
                     ASPECT_RATIO<>,
                     aperture,
                     dist_to_focus,
                     0.0,
                     1.0
                 };
-
-
-    //----- mats objs -----//
-    //create_scene_1();
-    //create_scene_2();
-    create_scene_3();
-
 
 
     //==========================================//
@@ -411,7 +447,49 @@ void create_scene_3(){
 
 
 
+// two big spheres with checker-texture
+void create_scene_4(){
 
+    HittableList scene {};
+
+    auto checker_tex = std::make_shared<CheckerTexture>(  
+        glm::dvec3{ 0.2, 0.3, 0.1 },
+        glm::dvec3{ 0.9, 0.9, 0.9 }
+    );
+    auto mat_checker = std::make_shared<Lambertian>( checker_tex );
+
+    scene.add( std::make_shared<Sphere>( 
+        glm::dvec3{ 0.0, -10.0, 0.0 }, 10.0, mat_checker
+    ));
+    scene.add( std::make_shared<Sphere>( 
+        glm::dvec3{ 0.0,  10.0, 0.0 }, 10.0, mat_checker
+    ));
+
+    //-----//
+    bvhSPtr = std::make_shared<BVH_Node>( scene, 0.0, 1.0 );
+}
+
+
+
+
+// two perlin sphere (big + sml)
+void create_scene_5(){
+
+    HittableList scene {};
+
+    auto perlinTex = std::make_shared<NoiseTexture>( 4.0 );
+    auto mat_perlin = std::make_shared<Lambertian>( perlinTex );
+
+    scene.add( std::make_shared<Sphere>( 
+        glm::dvec3{ 0.0, -1000.0, 0.0 }, 1000.0, mat_perlin
+    ));
+    scene.add( std::make_shared<Sphere>( 
+        glm::dvec3{ 0.0,  2.0, 0.0 }, 2.0, mat_perlin
+    ));
+
+    //-----//
+    bvhSPtr = std::make_shared<BVH_Node>( scene, 0.0, 1.0 );
+}
 
 
 
